@@ -1,0 +1,127 @@
+<head>
+    <title>Node.js Technical Documentation Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="stylesheet.css">
+</head>
+
+<nav id="navbar">
+    <header id="navbar-title">Node.js Documentation</header>
+    <div id="links">
+      <ul>
+        <li><a href="#Getting_Started" class="nav-link">Getting Started</a></li>
+        <li><a href="#Legacy_Debugger" class="nav-link">Legacy Debugger</a></li>
+        <li><a href="#Event_Loop" class="nav-link">Event Loop</a></li>
+        <li><a href="#Timers" class="nav-link">Timers</a></li>
+        <li><a href="#SetImmediate()" class="nav-link">SetImmediate()</a></li>
+        <li><a href="#Process.nextTick()" class="nav-link">Process.nextTick()</a></li>
+        <li><a href="#Blocking" class="nav-link">Blocking</a></li>
+        <li><a href="#Comparing_Code" class="nav-link">Comparing Code</a></li>
+        <li><a href="#Reference" class="nav-link">Reference</a></li>
+    </div>
+    
+  </nav>
+      
+  <main id="main-doc">
+    <section id="Getting_Started" class="main-section">
+      <header>Getting Started</header>
+      <p>Once you have installed Node, let's try building our first web server. Create a file named "app.js", and paste the following code:</p>
+      <div class="code-box">
+      <code>const http = require('http');</br></br>
+      const hostname = '127.0.0.1';</br>
+     const port = 3000;</br></br>
+  const server = http.createServer((req, res) => { </br>
+  &emsp;&emsp;res.statusCode = 200;</br>
+  &emsp;&emsp;res.setHeader('Content-Type', 'text/plain');</br>
+  &emsp;&emsp;res.end('Hello World\n'); </br>
+  });</br></br>
+  server.listen(port, hostname, () => {</br>
+  &emsp;&emsp;console.log(`Server running at http://${hostname}:${port}/`);</br>
+  });</code></div>
+  <p>After that, run your web server using <code>node app.js</code>, visit <a href="http://localhost:3000">http://localhost:3000</a>, and you will see a message 'Hello World'</p>
+    </section>
+    <section id="Legacy_Debugger" class="main-section">
+      <header>Legacy Debugger</header>
+      <p><strong>The legacy debugger has been deprecated as of Node 7.7.0. Please use --inspect and Inspector instead.</strong></p>
+      <p>When started with the <strong>--debug</strong> or <strong>--debug-brk</strong> switches in version 7 and earlier, Node.js listens for debugging commands defined by the discontinued V8 Debugging Protocol on a TCP port, by default <code>5858</code>. Any debugger client which speaks this protocol can connect to and debug the running process; a couple popular ones are listed below.</p>
+      <a target="_blank" href="https://nodejs.org/dist/latest-v6.x/docs/api/debugger.html">Built-in Debugger</a>
+      <p>Start <code>node debug script_name.js</code> to start your script under Node's builtin command-line debugger. Your script starts in another Node process started with the <code>--debug-brk</code> option, and the initial Node process runs the <code>_debugger.js</code> script and connects to your target.</p>
+      <a target="_blank"href="https://github.com/node-inspector/node-inspector">Node-inspector</a>
+      <p>Debug your Node.js app with Chrome DevTools by using an intermediary process which translates the Inspector Protocol used in Chromium to the V8 Debugger protocol used in Node.js.</p>
+    </section>
+    <section id="Event_Loop" class="main-section">
+      <header>Event Loop</header>
+      <p>The event loop is what allows Node.js to perform non-blocking I/O operations — despite the fact that JavaScript is single-threaded — by offloading operations to the system kernel whenever possible.</p>
+      <p>Since most modern kernels are multi-threaded, they can handle multiple operations executing in the background. When one of these operations completes, the kernel tells Node.js so that the appropriate callback may be added to the <Strong>poll</strong> queue to eventually be executed. We'll explain this in further detail later in this topic.</p>
+      <p>When Node.js starts, it initializes the event loop, processes the provided input script (or drops into the REPL, which is not covered in this document) which may make async API calls, schedule timers, or call <code>process.nextTick()</code>, then begins processing the event loop.</p>
+      <p>The event loop has an orders of operations, also known as phases. The following is an overview of phases:</p>
+      <ul>
+        <li><strong>timers:</strong> this phase executes callbacks scheduled by <code>setTimeout()</code> and <code>setInterval()</code>.</li>
+        <li><strong>pending callbacks:</strong> executes I/O callbacks deferred to the next loop iteration.</li>
+        <li><strong>idle, prepare:</strong> only used internally.</li>
+        <li><strong>poll:</strong> retrieve new I/O events; execute I/O related callbacks (almost all with the exception of close callbacks, the ones scheduled by timers, and <code>setImmediate());</code> node will block here when appropriate.</li>
+        <li><strong>check:</strong> <code>setImmediate()</code> callbacks are invoked here.</li>
+        <li><strong>close callbacks:</strong> some close callbacks, e.g. <code>socket.on('close', ...)</code>.</li>
+      </ul>
+    </section>
+    <section id="Timers" class="main-section">
+      <header>Timers</header>
+      <p>A timer specifies the <strong>threshold</strong> after which a provided callback may be executed rather than the <strong>exact</strong> time a person wants it to be executed. Timers callbacks will run as early as they can be scheduled after the specified amount of time has passed; however, Operating System scheduling or the running of other callbacks may delay them.</p>
+      <p><strong>Note:</strong> Technically, the poll phase controls when timers are executed.</p>
+      <p>
+    </section>
+    <section id="SetImmediate()" class="main-section">
+      <header>SetImmediate()</header>
+      <p><code>setImmediate()</code> plays a role in both the poll and the check phases.</p>
+      <p><strong>Poll</strong></p>
+      <p>The poll has a poll queue. When this queue is empty, one of two things will happen.</p>
+      <ul>
+        <li>If scripts have been scheduled by <code>setImmediate()</code>, the event loop will end the <strong>poll</strong> phase and continue to the <strong>check</strong> phase to execute those scheduled scripts.</li>
+        <li>If scripts have not been scheduled by <code>setImmediate()</code>, the event loop will wait for callbacks to be added to the queue, then execute them immediately.</li>
+      </ul>
+      <p><strong>Check</strong></p>
+      <p>This phase allows a person to execute callbacks immediately after the <strong>poll</strong> phase has completed. If the poll phase becomes idle and scripts have been queued with <code>setImmediate()</code>, the event loop may continue to the check phase rather than waiting.</p>
+      <p><code>setImmediate()</code> is actually a special timer that runs in a separate phase of the event loop. It uses a libuv API that schedules callbacks to execute after the <strong>poll</strong> phase has completed.</p>
+      <p>Generally, as the code is executed, the event loop will eventually hit the poll phase where it will wait for an incoming connection, request, etc. However, if a callback has been scheduled with <code>setImmediate()</code> and the <strong>poll</strong> phase becomes idle, it will end and continue to the check phase rather than waiting for poll events.</p>
+  </section>
+    <section id="Process.nextTick()" class="main-section">
+      <header>Process.nextTick()</header>
+      <p><code>process.nextTick()</code> is not technically part of the event loop. Instead, the <code>nextTickQueue</code> will be processed after the current operation completes, regardless of the current phase of the event loop.</p>
+      <p>There are two reasons why you would use <code>process.nextTick()</code> over <code>setImmediate()</code></p>
+      <ol>
+        <li>Allow users to handle errors, cleanup any then unneeded resources, or perhaps try the request again before the event loop continues.</li>
+        <li>At times it's necessary to allow a callback to run after the call stack has unwound but before the event loop continues.</li>
+      </ol>
+    </section>
+  <section id="Blocking" class="main-section">
+    <header>Blocking</header>
+    <p><strong>Blocking</strong> is when the execution of additional JavaScript in the Node.js process must wait until a non-JavaScript operation completes. This happens because the event loop is unable to continue running JavaScript while a <strong>blocking</strong> operation is occurring.</p>
+    <p>In Node.js, JavaScript that exhibits poor performance due to being CPU intensive rather than waiting on a non-JavaScript operation, such as I/O, isn't typically referred to as <strong>blocking</strong>. Synchronous methods in the Node.js standard library that use libuv are the most commonly used <strong>blocking</strong> operations. Native modules may also have blocking methods.</p>
+    <p>All of the I/O methods in the Node.js standard library provide asynchronous versions, which are <strong>non-blocking</strong>, and accept callback functions. Some methods also have <strong>blocking</strong> counterparts, which have names that end with <code>Sync</code>.</p>
+  </section>
+  <section id="Comparing_Code" class="main-section">
+    <header>Comparing Code</header>
+    <p><strong>Blocking</strong> methods execute <strong>synchronously</strong> and <strong>non-blocking</strong> methods execute <strong>asynchronously</strong>.</p>
+    <p>Using the File System module as an example, this is a synchronous file read:</p>
+    <div class="code-box">
+      <code>const fs = require('fs');</br>const data = fs.readFileSync('/file.md'); // blocks here until file is read</code>  
+    </div>
+  <p>And here is an equivalent <strong>asynchronous</strong> example:</p>
+  <div class="code-box">
+    <code>const fs = require('fs');</br>
+    fs.readFile('/file.md', (err, data) => {</br>
+    &emsp;&emsp;if (err) throw err;</br>
+  });
+    </code>
+  </div>
+  <p>The first example appears simpler than the second but has the disadvantage of the second line <strong>blocking</strong> the execution of any additional JavaScript until the entire file is read. Note that in the synchronous version if an error is thrown it will need to be caught or the process will crash. In the asynchronous version, it is up to the author to decide whether an error should throw as shown.</p>
+  </section>
+    <section id="Reference" class="main-section">
+      <header>Reference</header> 
+      <ul>
+        <li>All the documentation on this page is taken from the offical <a target="_blank" href="https://nodejs.org/en/docs/guides/">Node.js</a> website.</li>
+      </ul>
+      
+  </section>
+  </main>
+  
+  
